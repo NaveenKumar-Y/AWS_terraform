@@ -15,6 +15,40 @@ resource "random_id" "unique_id" {
   byte_length = 4
 }
 
+# --- Elastic IP (for static public IP) ---
+resource "aws_eip" "web_server_eip" {
+  domain = "vpc" # Use "vpc" for VPC-based EIPs
+  # instance = aws_instance.my_instance.id    ## direct association with the EC2 instance will block rolling udpate(create_before_destroy)
+  # use aws_eip_association
+  tags = {
+    Name = "WebServerStaticEIP"
+  }
+}
+
+
+# resource "local_file" "startup_script" {
+#   content = templatefile("${path.module}/startup-script.sh",{
+#     server = "nginx"
+#     version = "1"
+#   })
+#   filename = "" #"${path.module}/startup-script.sh"
+# }
+
+
+locals {
+  rendered_script = templatefile("${path.module}/startup-script.sh", {
+    server  = "nginx"
+    version = var.script_version
+  })
+}
+
+resource "null_resource" "script_change_trigger" {
+  triggers = {
+    script_hash = sha256(local.rendered_script)
+  }
+  
+}
+
 
 resource "aws_instance" "my_instance" {
   ami = data.aws_ami.latest_amazon_linux.id
@@ -27,17 +61,34 @@ resource "aws_instance" "my_instance" {
   vpc_security_group_ids      = var.vpc_security_group_ids
   subnet_id                   = var.ec2_subnet_id
 
-  user_data = file("${path.module}/startup-script.sh")
-
+  # private_ip = "10.0.16.109"
+  # public_dns = "naveen.compute-1.amazonaws.com"
   monitoring = var.enable_monitoring
 
+  # user_data = file("${path.module}/startup-script.sh")
+  # user_data = templatefile("${path.module}/startup-script.sh", {
+  #   # instance_id = self.id
+  #   server = "nginx"
+  #   version = "1"
+  # })
+  user_data = local.rendered_script
 
+  lifecycle {
+    replace_triggered_by = [ null_resource.script_change_trigger ]
+    create_before_destroy = true  # EIP will take care of assigning IP to newer instance from old.
+  }
 
   tags = {
     Name = "my_ec2_instance-${random_id.unique_id.hex}" # , the "Name" column you see in the console is populated by tag with the key Name (capital 'N').
   }
+}
 
-  
+resource "aws_eip_association" "instance_asso_ip" {
+  instance_id   = aws_instance.my_instance.id
+  allocation_id = aws_eip.web_server_eip.id
 
+  # This ensures that the EIP is associated with the instance and supports rolling updates.
+
+  depends_on = [ aws_instance.my_instance ]  # wait till new instance is up
 
 }

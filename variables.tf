@@ -25,3 +25,11 @@ variable "egress_rules" {
   }]
   
 }
+
+
+variable "script_version" {
+  type        = string
+  description = "Version of the startup script to be used."
+  default     = "1.0"
+  
+}

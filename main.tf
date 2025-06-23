@@ -17,5 +17,6 @@ module "ec2" {
   vpc_security_group_ids = [module.VPC.vpc_sg_id]
   ec2_subnet_id          = module.VPC.public_subnet
   enable_monitoring      = true
+  script_version = var.script_version
 
 }

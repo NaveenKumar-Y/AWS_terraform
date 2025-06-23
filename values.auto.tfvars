@@ -21,3 +21,4 @@ ingress_rules = [{
 
 
 
+script_version = "6.0"

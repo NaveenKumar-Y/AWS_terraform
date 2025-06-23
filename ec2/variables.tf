@@ -21,6 +21,14 @@ variable "enable_monitoring" {
   default     = true
 }
 
+
+variable "script_version" {
+  type        = string
+  description = "Version of the startup script to be used."
+  default     = "1.0"
+  
+}
+
 # variable "ec2_ingress_rules" {
 #   type = list(object({
 #     from_port   = number
