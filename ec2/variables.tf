@@ -9,9 +9,14 @@ variable "vpc_security_group_ids" {
   description = "List of security group IDs to associate with the EC2 instance."
 }
 
-variable "ec2_subnet_id" {
+variable "ec2_private_subnet_id" {
   type        = string
   description = "The ID of the subnet in which to launch the EC2 instance."
+}
+
+variable "ec2_public_subnet_id" {
+  type        = string
+  description = "The ID of the public subnet in which to launch the EC2 instance."
 }
 
 

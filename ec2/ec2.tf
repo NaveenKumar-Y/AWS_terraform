@@ -50,6 +50,16 @@ resource "null_resource" "script_change_trigger" {
 }
 
 
+resource "aws_network_interface" "ec2_interface" {
+  subnet_id = var.ec2_private_subnet_id
+  private_ips = ["10.0.16.109"]
+  security_groups = var.vpc_security_group_ids
+
+
+  
+}
+
+
 resource "aws_instance" "my_instance" {
   ami = data.aws_ami.latest_amazon_linux.id
   # name = "my_ec2_instance"
@@ -59,7 +69,12 @@ resource "aws_instance" "my_instance" {
 
   associate_public_ip_address = true
   vpc_security_group_ids      = var.vpc_security_group_ids
-  subnet_id                   = var.ec2_subnet_id
+  subnet_id                   = var.ec2_public_subnet_id
+
+  network_interface {
+    network_interface_id = aws_network_interface.ec2_interface.id
+    device_index         = 0  # Primary network interface
+  }
 
   # private_ip = "10.0.16.109"
   # public_dns = "naveen.compute-1.amazonaws.com"
@@ -92,3 +107,5 @@ resource "aws_eip_association" "instance_asso_ip" {
   depends_on = [ aws_instance.my_instance ]  # wait till new instance is up
 
 }
+
+
