@@ -1,0 +1,68 @@
+# terraform graph > dependency_graph.dot
+#
+# can visualize the graph using software packages like graphviz or
+# use online website to visualize
+
+digraph G {
+  rankdir = "RL";
+  node [shape = rect, fontname = "sans-serif"];
+  subgraph "cluster_module.VPC" {
+    label = "module.VPC"
+    fontname = "sans-serif"
+    "module.VPC.aws_internet_gateway.internet_gateway" [label="aws_internet_gateway.internet_gateway"];
+    "module.VPC.aws_route.public_route" [label="aws_route.public_route"];
+    "module.VPC.aws_route_table.public_route_table" [label="aws_route_table.public_route_table"];
+    "module.VPC.aws_route_table_association.public_route_table_association" [label="aws_route_table_association.public_route_table_association"];
+    "module.VPC.aws_security_group.name" [label="aws_security_group.name"];
+    "module.VPC.aws_subnet.private" [label="aws_subnet.private"];
+    "module.VPC.aws_subnet.public" [label="aws_subnet.public"];
+    "module.VPC.aws_vpc.custom1" [label="aws_vpc.custom1"];
+  }
+  subgraph "cluster_module.ec2" {
+    label = "module.ec2"
+    fontname = "sans-serif"
+    "module.ec2.data.aws_ami.latest_amazon_linux" [label="data.aws_ami.latest_amazon_linux"];
+    "module.ec2.aws_eip.web_server_eip" [label="aws_eip.web_server_eip"];
+    "module.ec2.aws_eip_association.instance_asso_ip" [label="aws_eip_association.instance_asso_ip"];
+    "module.ec2.aws_instance.my_instance" [label="aws_instance.my_instance"];
+    "module.ec2.aws_network_interface.ec2_interface" [label="aws_network_interface.ec2_interface"];
+    "module.ec2.null_resource.script_change_trigger" [label="null_resource.script_change_trigger"];
+    "module.ec2.random_id.unique_id" [label="random_id.unique_id"];
+  }
+  subgraph "cluster_module.external" {
+    label = "module.external"
+    fontname = "sans-serif"
+    "module.external.aws_key_pair.key_pair" [label="aws_key_pair.key_pair"];
+    "module.external.local_file.private_ssh_key" [label="local_file.private_ssh_key"];
+    "module.external.tls_private_key.ssh_keys" [label="tls_private_key.ssh_keys"];
+  }
+  subgraph "cluster_module.rds" {
+    label = "module.rds"
+    fontname = "sans-serif"
+    "module.rds.aws_db_instance.rds" [label="aws_db_instance.rds"];
+    "module.rds.aws_db_subnet_group.rds_subnet_grp" [label="aws_db_subnet_group.rds_subnet_grp"];
+  }
+  "module.VPC.aws_internet_gateway.internet_gateway" -> "module.VPC.aws_vpc.custom1";
+  "module.VPC.aws_route.public_route" -> "module.VPC.aws_internet_gateway.internet_gateway";
+  "module.VPC.aws_route.public_route" -> "module.VPC.aws_route_table.public_route_table";
+  "module.VPC.aws_route_table.public_route_table" -> "module.VPC.aws_vpc.custom1";
+  "module.VPC.aws_route_table_association.public_route_table_association" -> "module.VPC.aws_route_table.public_route_table";
+  "module.VPC.aws_route_table_association.public_route_table_association" -> "module.VPC.aws_subnet.public";
+  "module.VPC.aws_security_group.name" -> "module.VPC.aws_vpc.custom1";
+  "module.VPC.aws_subnet.private" -> "module.VPC.aws_vpc.custom1";
+  "module.VPC.aws_subnet.public" -> "module.VPC.aws_vpc.custom1";
+  "module.ec2.aws_eip_association.instance_asso_ip" -> "module.ec2.aws_eip.web_server_eip";
+  "module.ec2.aws_eip_association.instance_asso_ip" -> "module.ec2.aws_instance.my_instance";
+  "module.ec2.aws_instance.my_instance" -> "module.ec2.data.aws_ami.latest_amazon_linux";
+  "module.ec2.aws_instance.my_instance" -> "module.ec2.aws_network_interface.ec2_interface";
+  "module.ec2.aws_instance.my_instance" -> "module.ec2.null_resource.script_change_trigger";
+  "module.ec2.aws_instance.my_instance" -> "module.ec2.random_id.unique_id";
+  "module.ec2.aws_instance.my_instance" -> "module.external.aws_key_pair.key_pair";
+  "module.ec2.aws_network_interface.ec2_interface" -> "module.VPC.aws_security_group.name";
+  "module.ec2.aws_network_interface.ec2_interface" -> "module.VPC.aws_subnet.public";
+  "module.external.aws_key_pair.key_pair" -> "module.external.tls_private_key.ssh_keys";
+  "module.external.local_file.private_ssh_key" -> "module.external.tls_private_key.ssh_keys";
+  "module.rds.aws_db_instance.rds" -> "module.VPC.aws_security_group.name";
+  "module.rds.aws_db_instance.rds" -> "module.rds.aws_db_subnet_group.rds_subnet_grp";
+  "module.rds.aws_db_subnet_group.rds_subnet_grp" -> "module.VPC.aws_subnet.public";
+}

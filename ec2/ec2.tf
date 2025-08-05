@@ -54,8 +54,6 @@ resource "aws_network_interface" "ec2_interface" {
   subnet_id = var.ec2_private_subnet_id
   private_ips = ["10.0.16.109"]
   security_groups = var.vpc_security_group_ids
-
-
   
 }
 
@@ -67,9 +65,11 @@ resource "aws_instance" "my_instance" {
 
   key_name = var.ssh_pulbic_key_name
 
-  associate_public_ip_address = true
-  vpc_security_group_ids      = var.vpc_security_group_ids
-  subnet_id                   = var.ec2_public_subnet_id
+  ########### # not requried if custom network interface is used ############3
+  # associate_public_ip_address = true  
+  # vpc_security_group_ids      = var.vpc_security_group_ids
+  # subnet_id                   = var.ec2_public_subnet_id
+  ########################################################################
 
   network_interface {
     network_interface_id = aws_network_interface.ec2_interface.id
@@ -99,11 +99,9 @@ resource "aws_instance" "my_instance" {
 }
 
 resource "aws_eip_association" "instance_asso_ip" {
-  instance_id   = aws_instance.my_instance.id
+  # instance_id   = aws_instance.my_instance.id  # direclty attaching to instance
+  network_interface_id = aws_network_interface.ec2_interface.id
   allocation_id = aws_eip.web_server_eip.id
-
-  # This ensures that the EIP is associated with the instance and supports rolling updates.
-
   depends_on = [ aws_instance.my_instance ]  # wait till new instance is up
 
 }

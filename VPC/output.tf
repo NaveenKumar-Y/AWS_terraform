@@ -4,9 +4,11 @@ output "vpc_sg_id" {
 }
 
 output "private_subnet" {
-  value = aws_subnet.private[0].id #one(aws_subnet.private[*].id)
+  # value = aws_subnet.private[0].id #one(aws_subnet.private[*].id)
+  value = aws_subnet.private[*].id
 }
 
 output "public_subnet" {
-  value = aws_subnet.public[0].id #one(aws_subnet.public[*].id)
+  # value = aws_subnet.public[0].id #one(aws_subnet.public[*].id)
+  value = aws_subnet.public[*].id
 }

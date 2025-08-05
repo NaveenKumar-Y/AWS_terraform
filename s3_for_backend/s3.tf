@@ -1,7 +1,7 @@
 
 
 resource "aws_s3_bucket" "backend_bucket" {
-  bucket_prefix = "state-file-bucket"
+  bucket_prefix = var.backend_bucket_prefix
 
   tags = {
     Name        = "StateFileBucket"

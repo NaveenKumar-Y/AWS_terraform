@@ -23,6 +23,7 @@ resource "aws_db_instance" "rds" {
 
     vpc_security_group_ids = var.vpc_security_group_ids
     db_subnet_group_name = aws_db_subnet_group.rds_subnet_grp.name
+    multi_az             = false
 
     tags = {
       Name = "AppDatabase"
