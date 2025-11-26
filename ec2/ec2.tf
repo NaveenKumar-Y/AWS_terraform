@@ -36,7 +36,7 @@ resource "aws_eip" "web_server_eip" {
 
 
 locals {
-  rendered_script = templatefile("${path.module}/startup-script.sh", {
+  rendered_script = templatefile("${path.module}/startup_script.sh", {
     server  = "nginx"
     version = var.script_version
   })
@@ -51,9 +51,15 @@ resource "null_resource" "script_change_trigger" {
 
 
 resource "aws_network_interface" "ec2_interface" {
+  
   subnet_id = var.ec2_private_subnet_id
   private_ips = ["10.0.16.109"]
   security_groups = var.vpc_security_group_ids
+
+  lifecycle {
+    replace_triggered_by = [ null_resource.script_change_trigger ]
+    create_before_destroy = true  # EIP will take care of assigning IP to newer instance from old.
+  }
   
 }
 
@@ -62,6 +68,7 @@ resource "aws_instance" "my_instance" {
   ami = data.aws_ami.latest_amazon_linux.id
   # name = "my_ec2_instance"
   instance_type = "t2.micro"
+  provider = aws
 
   key_name = var.ssh_pulbic_key_name
 

@@ -1,0 +1,151 @@
+#!/bin/bash
+set -e
+
+echo "--- ${server} Installation and Configuration (as before) ---"
+echo "Installing ${server}..."
+sudo dnf update -y
+sudo dnf install -y ${server}
+sudo systemctl start ${server}
+sudo systemctl enable ${server}
+# echo "<html><body><h1>Hello from EC2 ${server} Server!</h1><p>version ${version}</p></body></html>" | sudo tee /usr/share/${server}/html/index.html
+echo "<html><body><h1>Hello Srinivasulu!</h1><p>jai NTR</p></body></html>" | sudo tee /usr/share/${server}/html/index.html
+echo "${server} installed and configured."
+
+echo "--- CloudWatch Agent Installation and Configuration ---"
+echo "Installing CloudWatch Agent..."
+sudo dnf install -y amazon-cloudwatch-agent
+
+echo "Create the CloudWatch Agent configuration file"
+echo "Write the JSON config using tee"
+echo '$${local.cloudwatch_agent_config}' | sudo tee /opt/aws/amazon-cloudwatch-agent/bin/config.json > /dev/null
+
+echo "Start the CloudWatch Agent with the new config"
+echo "Starting CloudWatch Agent..."
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+
+echo "CloudWatch Agent setup complete."
+
+echo "prometheus"
+
+echo "--- 1. Update System and Install Tools ---"
+yum update -y
+yum install wget -y
+
+echo "--- 2. Install and Configure Prometheus ---"
+echo "Create a user for Prometheus"
+useradd --no-create-home --shell /bin/false prometheus
+
+echo "Create necessary directories"
+mkdir /etc/prometheus
+mkdir /var/lib/prometheus
+
+echo "Download and install Prometheus"
+cd /tmp/
+wget https://github.com/prometheus/prometheus/releases/download/v2.53.0/prometheus-2.53.0.linux-amd64.tar.gz
+tar -xvf prometheus-2.53.0.linux-amd64.tar.gz
+cd prometheus-2.53.0.linux-amd64/
+cp prometheus /usr/local/bin/
+cp promtool /usr/local/bin/
+cp -r consoles /etc/prometheus
+cp -r console_libraries /etc/prometheus
+
+echo "Create prometheus.yml configuration"
+cat <<EOF > /etc/prometheus/prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+EOF
+
+echo "Set permissions"
+chown -R prometheus:prometheus /etc/prometheus
+chown prometheus:prometheus /var/lib/prometheus
+chown prometheus:prometheus /usr/local/bin/prometheus
+chown prometheus:prometheus /usr/local/bin/promtool
+
+echo "Create Prometheus systemd service file"
+cat <<EOF > /etc/systemd/system/prometheus.service
+[Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/usr/local/bin/prometheus \
+    --config.file /etc/prometheus/prometheus.yml \
+    --storage.tsdb.path /var/lib/prometheus/ \
+    --web.console.templates=/etc/prometheus/consoles \
+    --web.console.libraries=/etc/prometheus/console_libraries
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "--- 3. Install and Configure Node Exporter ---"
+echo "Create user for Node Exporter"
+useradd --no-create-home --shell /bin/false node_exporter
+
+echo "Download and install Node Exporter"
+cd /tmp/
+wget https://github.com/prometheus/node_exporter/releases/download/v1.8.1/node_exporter-1.8.1.linux-amd64.tar.gz
+tar -xvf node_exporter-1.8.1.linux-amd64.tar.gz
+cd node_exporter-1.8.1.linux-amd64/
+cp node_exporter /usr/local/bin/
+
+echo "Set permissions"
+chown node_exporter:node_exporter /usr/local/bin/node_exporter
+
+echo "Create Node Exporter systemd service file"
+cat <<EOF > /etc/systemd/system/node_exporter.service
+[Unit]
+Description=Node Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/usr/local/bin/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "--- 4. Install and Configure Grafana ---"
+echo "Create Grafana repository file"
+cat <<EOF > /etc/yum.repos.d/grafana.repo
+[grafana]
+name=grafana
+baseurl=https://packages.grafana.com/oss/rpm
+repo_gpgcheck=1
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.grafana.com/gpg.key
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+EOF
+
+echo "Install Grafana"
+yum install grafana -y
+
+echo "--- 5. Start All Services ---"
+systemctl daemon-reload
+systemctl enable --now prometheus
+systemctl enable --now node_exporter
+systemctl enable --now grafana-server
+
+systemctl start prometheus
+systemctl start node_exporter
+systemctl start grafana-server
+
+echo "User data script finished."

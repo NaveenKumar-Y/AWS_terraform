@@ -1,8 +1,3 @@
-locals {
-  cidr_private = cidrsubnet(aws_vpc.custom1[0].cidr_block, 4, 0)
-  cidr_public  = cidrsubnet(aws_vpc.custom1[0].cidr_block, 4, 1)
-}
-
 
 resource "aws_vpc" "custom1" {
   count            = var.create_vpc ? 1 : 0

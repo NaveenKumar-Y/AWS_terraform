@@ -11,7 +11,7 @@ provider "aws" {
   # aws_secret_access_key = xxx
   # ```
   
-  profile = "naveen"
+  profile = "default"
   
   ###################################################
   # or

@@ -1,7 +1,12 @@
 
+resource "random_integer" "suffix" {
+  min = 10000
+  max = 999999
+}
 
 resource "aws_s3_bucket" "backend_bucket" {
-  bucket_prefix = var.backend_bucket_prefix
+  # bucket_prefix = var.backend_bucket_prefix
+  bucket_prefix = "state-file-bucket-${random_integer.suffix.result}"
 
   tags = {
     Name        = "StateFileBucket"
