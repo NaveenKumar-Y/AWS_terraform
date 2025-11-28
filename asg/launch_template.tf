@@ -8,6 +8,15 @@ data "aws_ami" "amazon_linux" {
     name   = "architecture"
     values = ["x86_64"]
   }
+
+
+    filter {
+    name   = "name"
+    # This regex specifically looks for Amazon Linux 2 AMIs
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"] 
+  }
+
+  
 }
 
 

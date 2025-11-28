@@ -66,10 +66,13 @@ resource "aws_security_group" "lb_sg" {
 
 # Create the target group
 resource "aws_lb_target_group" "my_app_tg" {
+  depends_on = [ aws_lb.myapp_alb ]
   name     = "web-targets"
   port     = 80
   protocol = "HTTP"
   vpc_id   = var.aws_vpc_id
+
+  load_balancing_algorithm_type = "least_outstanding_requests"
 
   health_check {
     path     = "/"

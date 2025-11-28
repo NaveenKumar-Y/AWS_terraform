@@ -1,7 +1,16 @@
 locals {
   cidr_private = cidrsubnet(aws_vpc.custom1[0].cidr_block, 4, 0)
   cidr_public  = cidrsubnet(aws_vpc.custom1[0].cidr_block, 4, 1)
+
+  NAT_public_subnet_cidr = cidrsubnet(aws_vpc.custom1[0].cidr_block, 4, 2)
 }
+
+## translatest to :
+# locals {
+#   cidr_private = cidrsubnet("10.0.0.0/16", 4, 0)
+#   cidr_public  = cidrsubnet("10.0.0.0/16", 4, 1)
+# }
+
 
 locals {
   # az_zones = var.az_zones
@@ -32,37 +41,16 @@ resource "aws_subnet" "public" {
     Name = "public-subnet-${count.index + 1}"
   }
 }
+
+
+resource "aws_subnet" "public_for_NAT" {
+  # count             = 1
+  vpc_id            = aws_vpc.custom1[0].id
+  cidr_block        = local.NAT_public_subnet_cidr
+  availability_zone = element(var.az_zones, 2)
+  tags = {
+    Name = "public-subnet-NAT"
+  }
+}
 ##########################################
 
-
-resource "aws_internet_gateway" "internet_gateway" {
-  vpc_id = aws_vpc.custom1[0].id
-  tags = {
-    Name = "internet-gateway-for-public-subnets"
-  }
-}
-
-######## routing table for public subnets ############
-resource "aws_route_table" "public_route_table" {
-  vpc_id = aws_vpc.custom1[0].id
-  tags = {
-    Name = "public-route-table"
-  }
-}
-
-resource "aws_route" "public_route" {
-  route_table_id         = aws_route_table.public_route_table.id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.internet_gateway.id 
-}
-########################################################
-
-
-
-############ associating public subnets with public route table ############
-resource "aws_route_table_association" "public_route_table_association" {
-  count          = var.create_vpc ? var.public_subnet_count : 0
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public_route_table.id
-}
-###########################################################################

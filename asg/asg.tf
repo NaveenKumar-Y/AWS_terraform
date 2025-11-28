@@ -4,27 +4,29 @@ resource "aws_autoscaling_group" "my_app_asg" {
   name_prefix                      = "my_app_asg"
   max_size                  = 4
   min_size                  = 2
-  health_check_grace_period = 300
+  health_check_grace_period = 60  # When a new instance starts, the ASG ignores all health check failures for this duration to give the server time to boot and install software.
 #   health_check_type         = "ELB"
+  health_check_type         = "ELB"
   desired_capacity          = 2
   force_delete              = true
 #   placement_group           = aws_placement_group.test.id
 #   launch_configuration      = aws_launch_configuration.foobar.name
   launch_template {
     id      = aws_launch_template.my_app_template.id
-    version = "$Latest"
+    # version = "$Latest"  ## Passive. No rollout.
+    version = aws_launch_template.my_app_template.latest_version ## Active. Triggers rollout of ASG on every change.
   }
   vpc_zone_identifier       = var.private_subnets   # list of subnet IDs that define where EC2 instances can be deployed.
 
   instance_maintenance_policy {
-    min_healthy_percentage = 50        # During instance refresh or replacement, at least 90% of desired capacity should be healthy.
-    max_healthy_percentage = 150      # During instance refresh or replacement, the ASG can temporarily exceed desired capacity by up to 20%.
+    min_healthy_percentage = 90        # During instance refresh or replacement, at least 90% of desired capacity should be healthy.
+    max_healthy_percentage = 120     # During instance refresh or replacement, the ASG can temporarily exceed desired capacity by up to 20%.
   }
 
   initial_lifecycle_hook {
     name                 = "wait_for_user_data_script_completion"
     default_result       = "CONTINUE"
-    heartbeat_timeout    = 600
+    heartbeat_timeout    = 60
     lifecycle_transition = "autoscaling:EC2_INSTANCE_LAUNCHING"
 
     notification_metadata = jsonencode({
@@ -60,6 +62,6 @@ resource "aws_autoscaling_group" "my_app_asg" {
     #   create_before_destroy = true
     # }
 
-    # target_group_arns = [var.target_group_arn]
+    target_group_arns = [var.target_group_arn]
 
 }
