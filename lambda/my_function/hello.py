@@ -1,0 +1,10 @@
+import json
+
+def lambda_handler(event, context):
+    """
+    Sample AWS Lambda function that returns a simple greeting.
+    """
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Hello from AWS Lambda!') 
+    }

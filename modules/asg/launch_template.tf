@@ -98,9 +98,13 @@ resource "aws_launch_template" "my_app_template" {
     resource_type = "instance"
 
     tags = {
-      Name = "dev"
+      Name = "dev-${var.VERSION_NUMBER}-instance"
+      
     }
   }
 
-  user_data = filebase64("${path.module}/startup_script.sh")
+  # user_data = filebase64("${path.module}/startup_script.sh")
+  user_data = base64encode(templatefile("${path.module}/startup_script.sh", {
+    VERSION_NUMBER = var.VERSION_NUMBER
+  }))
 }

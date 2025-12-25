@@ -1,5 +1,11 @@
 
+
 backend_bucket_prefix = "state-file-bucket"
+
+
+script_version = "7.0"
+
+VERSION_NUMBER = "v4"
 
 ingress_rules = [{
   from_port   = 22
@@ -108,4 +114,3 @@ ingress_rules = [{
 
 
 
-script_version = "7.0"

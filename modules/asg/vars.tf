@@ -15,3 +15,10 @@ variable "target_group_arn" {
   type        = string
   
 }
+
+variable "VERSION_NUMBER" {
+  description = "Version number for the application deployment"
+  type        = string
+  default = "v1"
+  
+}

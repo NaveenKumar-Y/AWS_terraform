@@ -40,3 +40,10 @@ variable "script_version" {
   default     = "1.0"
   
 }
+
+variable "VERSION_NUMBER" {
+  description = "Version number for the application deployment"
+  type        = string
+  default = "v1"
+  
+}

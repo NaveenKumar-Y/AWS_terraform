@@ -3,35 +3,36 @@
 
 
 module "VPC" {
-  source            = "./VPC"
+  source            = "../modules/VPC"
   vpc_ingress_rules = var.ingress_rules
   vpc_egress_rules = var.egress_rules
 }
 
 module "alb" {
-  source = "./alb"
+  source = "../modules/alb"
   aws_vpc_id = module.VPC.vpc_id
   lb_subnets = module.VPC.public_subnet
 
 }
 
 module "asg" {
-  source = "./asg"
+  source = "../modules/asg"
   sg_id = module.alb.alb_sg
   private_subnets = module.VPC.private_subnet
   target_group_arn = module.alb.target_group_arn
+  VERSION_NUMBER = var.VERSION_NUMBER
   
 }
 
 
 
 # module "external" {
-#   source = "./external"
+#   source = "../modules/external"
 # }
 
 # module "ec2" {
 #   # depends_on = [ module.external ]
-#   source                 = "./ec2"
+#   source                 = "../modules/ec2"
 #   ssh_pulbic_key_name    = module.external.key_pair
 #   vpc_security_group_ids = [module.VPC.vpc_sg_id]
 #   ec2_private_subnet_id          = module.VPC.public_subnet[0]
@@ -43,7 +44,7 @@ module "asg" {
 
 
 # module "rds" {
-#   source = "./rds"
+#   source = "../modules/rds"
 #   vpc_security_group_ids = [module.VPC.vpc_sg_id]
 #   rds_subnet_ids = module.VPC.public_subnet
   

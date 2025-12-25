@@ -1,14 +1,13 @@
 
-data "terraform_remote_state" "s3_backend" {
-  backend = "remote"
+terraform { 
+  cloud { 
+    
+    organization = "Naveen_org" 
 
-  config = {
-    organization = "Naveen_org"
-    workspaces = {
-      name = "aws-s3-bucket-kk"
-    }
-  }
-  
+    workspaces { 
+      name = "AWS_App1" 
+    } 
+  } 
 }
 
 
